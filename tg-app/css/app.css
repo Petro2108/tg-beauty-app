@@ -1070,6 +1070,102 @@ button {
   box-shadow: 0 1px 4px rgba(0,0,0,.1);
 }
 
+/* ── Экран Детали записи ────────────────────────────────── */
+.booking-detail-screen { padding-bottom: 100px; }
+
+.bd-photo {
+  position: relative;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bd-photo-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.5) 0%, transparent 60%);
+}
+.bd-photo-emoji {
+  font-size: 52px;
+  z-index: 1;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.3));
+}
+.bd-status-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 1;
+  padding: 4px 12px;
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+.bd-status-badge.confirmed { background: #dcfce7; color: #166534; }
+.bd-status-badge.cancelled { background: #f1f5f9; color: var(--tg-hint); }
+.bd-status-badge.soon      { background: #fef9c3; color: #854d0e; }
+
+.bd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px var(--px) 4px;
+}
+.bd-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+.bd-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tg-btn);
+}
+
+.bd-details {
+  margin: 12px var(--px);
+  background: var(--tg-bg2);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.bd-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(128,128,128,.1);
+}
+.bd-row:last-child { border-bottom: none; }
+.bd-row-icon { font-size: 20px; flex-shrink: 0; width: 24px; text-align: center; }
+.bd-row-label { font-size: 12px; color: var(--tg-hint); margin-bottom: 2px; }
+.bd-row-value { font-size: 15px; font-weight: 500; }
+
+.bd-policy {
+  margin: 0 var(--px) 12px;
+  padding: 12px 14px;
+  background: var(--tg-bg2);
+  border-radius: var(--r-md);
+  font-size: 13px;
+  color: var(--tg-hint);
+}
+
+.bd-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px var(--px) 16px;
+}
+.bd-cancel-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  border-radius: var(--r-md);
+}
+.bd-cancel-btn:active { opacity: .7; }
+
 /* ── Экран Профиль мастера ──────────────────────────────── */
 .master-screen { padding-bottom: 90px; }
 
@@ -1273,3 +1369,141 @@ button {
 
 /* Скрытие */
 .hidden { display: none !important; }
+
+/* ══════════════════════════════════════════════════════════
+   Оффер-модалка (первое открытие)
+   ══════════════════════════════════════════════════════════ */
+
+#offer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+#offer-modal.offer-visible {
+  animation: offerFadeIn .25s ease forwards;
+}
+#offer-modal.offer-hiding {
+  animation: offerFadeOut .2s ease forwards;
+}
+
+@keyframes offerFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes offerFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+.offer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, .6);
+  backdrop-filter: blur(4px);
+}
+
+.offer-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 480px;
+  background: var(--tg-bg);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 28px 24px 32px;
+  text-align: center;
+  animation: offerSlideUp .3s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+@keyframes offerSlideUp {
+  from { transform: translateY(60px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.offer-emoji {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 16px;
+  animation: popIn .4s .15s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+.offer-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--tg-text);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.offer-sub {
+  font-size: 15px;
+  color: var(--tg-hint);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.offer-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  text-align: left;
+  display: inline-block;
+}
+.offer-bullets li {
+  font-size: 14px;
+  color: var(--tg-text);
+  padding: 4px 0 4px 24px;
+  position: relative;
+  line-height: 1.4;
+}
+.offer-bullets li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--tg-btn);
+  font-weight: 700;
+}
+
+.offer-btn {
+  display: block;
+  width: 100%;
+  background: var(--tg-btn);
+  color: var(--tg-btn-text);
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  padding: 0;
+  height: 52px;
+  line-height: 52px;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.offer-btn:active {
+  opacity: .85;
+  transform: scale(.98);
+}
+
+.offer-skip {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--tg-hint);
+  font-size: 14px;
+  padding: 14px 0 0;
+  cursor: pointer;
+  text-align: center;
+}
+.offer-skip:active { opacity: .6; }
+
+/* Онбординг — убираем отступ снизу под кнопку «Пропустить» */
+.onboarding-card { padding-bottom: 28px; }
+
+/* Кнопка «Поделиться» на экране мастера */
+.master-cta { display: flex; flex-direction: column; gap: 10px; }

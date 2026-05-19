@@ -74,6 +74,43 @@
     </div>
   </div>
 
+  <!-- Онбординг (первое открытие) -->
+  <div id="onboarding-modal" style="display:none;" aria-modal="true" role="dialog">
+    <div class="offer-overlay" id="onboarding-overlay"></div>
+    <div class="offer-card onboarding-card">
+      <div class="offer-emoji">💅</div>
+      <div class="offer-title">Привет, <span id="onboarding-name">друг</span>!</div>
+      <div class="offer-sub">Рада видеть тебя здесь. Вот что ты можешь сделать:</div>
+      <ul class="offer-bullets">
+        <li>Посмотреть все услуги с ценами и фото работ</li>
+        <li>Выбрать удобное время и записаться в пару кликов</li>
+        <li>Управлять своими записями и отменять при необходимости</li>
+      </ul>
+      <button class="offer-btn" id="onboarding-start">Начать</button>
+    </div>
+  </div>
+
+  <!-- Оффер при первом открытии -->
+  <div id="offer-modal" style="display:none;" aria-modal="true" role="dialog">
+    <div class="offer-overlay" id="offer-overlay"></div>
+    <div class="offer-card">
+      <div class="offer-emoji">🎁</div>
+      <div class="offer-title">Скидка 15% на первую запись</div>
+      <div class="offer-sub">Подпишитесь на бота — получите промокод в личное сообщение</div>
+      <ul class="offer-bullets">
+        <li>Напомним о записи за день</li>
+        <li>Первыми узнаёте о свободных окошках</li>
+        <li>Эксклюзивные акции для подписчиков</li>
+      </ul>
+      <a class="offer-btn" id="offer-btn"
+         href="https://t.me/gomel_beauty_bot?start=from_app"
+         target="_blank" rel="noopener">
+        Получить скидку 15%
+      </a>
+      <button class="offer-skip" id="offer-skip">Пропустить</button>
+    </div>
+  </div>
+
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -258,14 +258,15 @@ function getFeaturedReview() {
 /** Диспетчер — вызывает нужный рендерер */
 function renderScreen(screen, params) {
   const renderers = {
-    home:     renderHome,
-    catalog:  renderCatalog,
-    service:  renderService,
-    calendar: renderCalendar,
-    summary:  renderSummary,
-    success:  renderSuccess,
-    bookings: renderBookings,
-    master:   renderMaster,
+    home:           renderHome,
+    catalog:        renderCatalog,
+    service:        renderService,
+    calendar:       renderCalendar,
+    summary:        renderSummary,
+    success:        renderSuccess,
+    bookings:       renderBookings,
+    bookingDetail:  renderBookingDetail,
+    master:         renderMaster,
   };
   const fn = renderers[screen];
   return fn ? fn(params) : `<div style="padding:32px;text-align:center">Экран не найден: ${screen}</div>`;
@@ -829,7 +830,119 @@ function renderBookings() {
 }
 
 /* ─────────────────────────────────────────────────────────
-   5.8 Профиль мастера
+   5.8 Детали записи
+   ───────────────────────────────────────────────────────── */
+function renderBookingDetail({ bookingId }) {
+  const b = BookingStorage.getAll().find(x => x.id === bookingId);
+  if (!b) return `<div style="padding:32px;text-align:center">Запись не найдена</div>`;
+
+  const s = getService(b.serviceId);
+  const m = APP_DATA.master;
+
+  const now = new Date();
+  const bookingDate = new Date(`${b.date}T${b.time}`);
+  const hoursLeft = (bookingDate - now) / 36e5;
+  const isCancelled = b.status === 'cancelled';
+  const isUpcoming  = !isCancelled && hoursLeft > 0;
+  const canCancel   = isUpcoming && hoursLeft > 24;
+
+  let statusLabel, statusClass;
+  if (isCancelled) {
+    statusLabel = 'Отменена'; statusClass = 'cancelled';
+  } else if (hoursLeft <= 0) {
+    statusLabel = 'Завершена'; statusClass = 'cancelled';
+  } else if (hoursLeft < 24) {
+    statusLabel = 'Сегодня'; statusClass = 'soon';
+  } else if (hoursLeft < 48) {
+    statusLabel = 'Завтра'; statusClass = 'soon';
+  } else {
+    statusLabel = 'Подтверждена'; statusClass = 'confirmed';
+  }
+
+  const photo = s.photos[0];
+  const photoBg = photo.url ? `url(${photo.url}) center/cover` : photo.gradient;
+
+  return `
+    <div class="booking-detail-screen fade-in">
+
+      <!-- Фото услуги -->
+      <div class="bd-photo" style="background:${photoBg}">
+        <div class="bd-photo-overlay"></div>
+        <div class="bd-status-badge ${statusClass}">${statusLabel}</div>
+        <div class="bd-photo-emoji">${s.emoji}</div>
+      </div>
+
+      <!-- Название и цена -->
+      <div class="bd-header">
+        <div class="bd-title">${s.title}</div>
+        <div class="bd-price">${formatPrice(s.price)}</div>
+      </div>
+
+      <!-- Детали -->
+      <div class="bd-details">
+        <div class="bd-row">
+          <span class="bd-row-icon">📅</span>
+          <div>
+            <div class="bd-row-label">Дата и время</div>
+            <div class="bd-row-value">${formatDateRu(b.date)}, ${b.time}</div>
+          </div>
+        </div>
+        <div class="bd-row">
+          <span class="bd-row-icon">⏱</span>
+          <div>
+            <div class="bd-row-label">Длительность</div>
+            <div class="bd-row-value">${formatDuration(s.duration)}</div>
+          </div>
+        </div>
+        <div class="bd-row">
+          <span class="bd-row-icon">💰</span>
+          <div>
+            <div class="bd-row-label">Стоимость</div>
+            <div class="bd-row-value" style="color:var(--tg-btn)">${formatPrice(s.price)}</div>
+          </div>
+        </div>
+        <div class="bd-row">
+          <span class="bd-row-icon">👤</span>
+          <div>
+            <div class="bd-row-label">Мастер</div>
+            <div class="bd-row-value">${m.name}</div>
+          </div>
+        </div>
+        <div class="bd-row">
+          <span class="bd-row-icon">📍</span>
+          <div>
+            <div class="bd-row-label">Адрес</div>
+            <div class="bd-row-value">${m.address}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Политика отмены -->
+      ${isUpcoming ? `
+        <div class="bd-policy">
+          ℹ️ Бесплатная отмена за 24 часа до визита
+        </div>` : ''}
+
+      <!-- Кнопки действий -->
+      <div class="bd-actions">
+        <button class="btn-primary" data-action="rebook" data-id="${s.id}">
+          Записаться снова
+        </button>
+        <button class="btn-outline" data-action="open-telegram-contact">
+          Написать мастеру
+        </button>
+        ${canCancel ? `
+          <button class="bd-cancel-btn" data-action="cancel-booking"
+                  data-booking-id="${b.id}">
+            Отменить запись
+          </button>` : ''}
+      </div>
+
+    </div>`;
+}
+
+/* ─────────────────────────────────────────────────────────
+   5.9 Профиль мастера
    ───────────────────────────────────────────────────────── */
 function renderMaster() {
   const m = APP_DATA.master;
@@ -911,6 +1024,9 @@ function renderMaster() {
       <div class="master-cta">
         <button class="btn-primary" data-action="go-tab" data-tab="catalog">
           Записаться к ${m.name.split(' ')[0]}
+        </button>
+        <button class="btn-outline" data-action="share-referral">
+          Поделиться с другом
         </button>
       </div>
 
@@ -1217,7 +1333,8 @@ document.addEventListener('click', e => {
     }
 
     case 'go-booking-detail': {
-      // Упрощённый переход — показываем toast (в v2 будет отдельный экран)
+      const bookingId = el.dataset.bookingId;
+      if (bookingId) Router.go('bookingDetail', { bookingId });
       break;
     }
 
@@ -1236,11 +1353,11 @@ document.addEventListener('click', e => {
 
     /* ── Поделиться ──────────────────────────────────────── */
     case 'share-referral': {
-      const text = `Записалась к крутому мастеру маникюра — ${APP_DATA.master.name}! Советую 💅`;
+      const shareText = `💅 Нашла классного мастера маникюра в Гомеле — ${APP_DATA.master.name}!\nЗаписывайся прямо в Telegram: https://t.me/gomel_beauty_bot`;
       if (tg) {
-        tg.switchInlineQuery(text);
+        tg.switchInlineQuery(shareText, ['users', 'groups', 'channels']);
       } else if (navigator.share) {
-        navigator.share({ text });
+        navigator.share({ text: shareText });
       }
       break;
     }
@@ -1409,22 +1526,90 @@ if (tg?.MainButton) {
    7. Запуск приложения
    ══════════════════════════════════════════════════════════ */
 
+/* ── Онбординг + Оффер ───────────────────────────────────── */
+
+const ONBOARDING_KEY = 'beauty_onboarding_shown';
+const OFFER_KEY      = 'beauty_offer_shown';
+
+function openModal(el) {
+  el.style.display = 'flex';
+  requestAnimationFrame(() => el.classList.add('offer-visible'));
+}
+
+function closeModal(el, cb) {
+  el.classList.remove('offer-visible');
+  el.classList.add('offer-hiding');
+  setTimeout(() => {
+    el.style.display = 'none';
+    el.classList.remove('offer-hiding');
+    if (cb) cb();
+  }, 220);
+}
+
+function showOffer() {
+  if (localStorage.getItem(OFFER_KEY)) return;
+  const modal = document.getElementById('offer-modal');
+  openModal(modal);
+
+  function close() {
+    localStorage.setItem(OFFER_KEY, '1');
+    closeModal(modal);
+  }
+
+  document.getElementById('offer-skip').onclick = close;
+  document.getElementById('offer-overlay').onclick = close;
+  document.getElementById('offer-btn').onclick = () => {
+    haptic('medium');
+    if (tg) tg.openTelegramLink('https://t.me/gomel_beauty_bot?start=from_app');
+    close();
+  };
+}
+
+function showOnboarding() {
+  if (localStorage.getItem(ONBOARDING_KEY)) {
+    // Онбординг уже видел — сразу проверяем оффер
+    setTimeout(showOffer, 900);
+    return;
+  }
+
+  // Подставляем имя пользователя
+  const nameEl = document.getElementById('onboarding-name');
+  if (nameEl) nameEl.textContent = userName;
+
+  const modal = document.getElementById('onboarding-modal');
+  openModal(modal);
+
+  function close() {
+    localStorage.setItem(ONBOARDING_KEY, '1');
+    closeModal(modal, () => setTimeout(showOffer, 500));
+  }
+
+  document.getElementById('onboarding-start').onclick = () => { haptic('medium'); close(); };
+  document.getElementById('onboarding-overlay').onclick = close;
+}
+
 function init() {
-  // Сбрасываем calMonth к текущему при старте
   const now = new Date();
   State.calYear  = now.getFullYear();
   State.calMonth = now.getMonth();
 
-  // Запускаем с главной
   Router.go('home', {}, 'tab');
 
-  // Обработчики нижней навигации
   document.querySelectorAll('.nav-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       haptic('light');
       Router.goTab(btn.dataset.tab);
     });
   });
+
+  // Онбординг через 700мс после загрузки
+  setTimeout(showOnboarding, 700);
+}
+
+// ?reset в URL — сбрасывает localStorage (для тестирования)
+if (new URLSearchParams(location.search).has('reset')) {
+  localStorage.clear();
+  history.replaceState(null, '', location.pathname);
 }
 
 // Запускаем после загрузки DOM

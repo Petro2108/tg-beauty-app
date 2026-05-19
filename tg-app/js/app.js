@@ -1023,7 +1023,7 @@ function renderMaster() {
       <div class="divider-full"></div>
       <div class="master-cta">
         <button class="btn-primary" data-action="go-tab" data-tab="catalog">
-          Записаться к ${m.name.split(' ')[0]}
+          Записаться к ${m.nameDative || m.name.split(' ')[0]}
         </button>
         <button class="btn-outline" data-action="share-referral">
           Поделиться с другом

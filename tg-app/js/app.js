@@ -1353,11 +1353,15 @@ document.addEventListener('click', e => {
 
     /* ── Поделиться ──────────────────────────────────────── */
     case 'share-referral': {
-      const shareText = `💅 Нашла классного мастера маникюра в Гомеле — ${APP_DATA.master.name}!\nЗаписывайся прямо в Telegram: https://t.me/gomel_beauty_bot`;
+      const shareUrl  = 'https://t.me/gomel_beauty_bot';
+      const shareText = `💅 Нашла классного мастера маникюра в Гомеле — ${APP_DATA.master.name}! Записывайся прямо в Telegram`;
+      const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
       if (tg) {
-        tg.switchInlineQuery(shareText, ['users', 'groups', 'channels']);
+        tg.openTelegramLink(telegramShareUrl);
       } else if (navigator.share) {
-        navigator.share({ text: shareText });
+        navigator.share({ text: shareText + ': ' + shareUrl });
+      } else {
+        navigator.clipboard?.writeText(shareUrl).then(() => alert('Ссылка скопирована!'));
       }
       break;
     }

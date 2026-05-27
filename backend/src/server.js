@@ -12,9 +12,11 @@ app.register(require('@fastify/cors'), { origin: true });
 // Platform bot
 const platformBot = new Bot(PLATFORM_BOT_TOKEN);
 setupPlatformBotHandlers(platformBot);
-platformBot.api.setWebhook(`${API_URL}/webhook/platform`).catch(e =>
-  app.log.warn('Platform bot webhook not set (probably dev mode):', e.message)
-);
+platformBot.init().then(() => {
+  platformBot.api.setWebhook(`${API_URL}/webhook/platform`).catch(e =>
+    app.log.warn('Platform bot webhook not set (probably dev mode):', e.message)
+  );
+}).catch(e => app.log.error('Failed to init platform bot:', e.message));
 app.decorate('platformBot', platformBot);
 
 // Routes

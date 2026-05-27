@@ -10,6 +10,78 @@
 
 ---
 
+## 🚀 Статус деплоя (обновлено 2026-05-27)
+
+| Компонент | Статус | Детали |
+|-----------|--------|--------|
+| База данных | ✅ Работает | Supabase, eu-west-1, 10 таблиц |
+| Бэкенд API | ✅ Работает | Railway: `https://tg-beauty-app-production.up.railway.app` |
+| Платформенный бот | ✅ Работает | Webhook установлен, онбординг мастеров работает |
+| Фронтенд | ⏳ Не задеплоен | Нужно подключить к реальному API и задеплоить |
+
+### Инфраструктура
+- **Database:** Supabase (project: `ngsfdbchjpelgpcnvvkz`, region: eu-west-1)
+- **Backend:** Railway (project: feisty-courtesy, service: tg-beauty-app)
+- **GitHub:** `https://github.com/Petro2108/tg-beauty-app` → автодеплой на Railway
+
+### Выполненные задачи
+- [x] Task 1: Scaffold + AES-256-GCM шифрование токенов
+- [x] Task 2: Миграции БД (запущены в Supabase SQL Editor)
+- [x] Task 3: Auth middleware (verifyInitData, clientAuth, masterAuth)
+- [x] Task 4: Public API (профиль, услуги, слоты, тема)
+- [x] Task 5: Client Bookings API (создание, отмена, просмотр)
+- [x] Task 6: Master Admin API (профиль, услуги, расписание, темы)
+- [x] Task 7: Platform Bot (онбординг мастеров, управление услугами)
+- [x] Деплой на Railway + настройка переменных окружения
+- [x] Подключение Supabase с SSL
+
+---
+
+## 📋 Следующие шаги (Phase 2)
+
+### Task 8: Подключить фронтенд к реальному API
+**Приоритет: высокий**
+
+Сейчас `tg-app` работает на localStorage. Нужно:
+- Заменить `data.js` на API-вызовы к бэкенду
+- Передавать `master_slug` через URL параметр (`?m=slug`)
+- Использовать Telegram `initData` для авторизации при бронировании
+- Хранить записи в БД вместо localStorage
+
+### Task 9: Задеплоить фронтенд
+**Приоритет: высокий**
+
+Варианты:
+- GitHub Pages (бесплатно, просто)
+- Vercel (бесплатно, HTTPS автоматически)
+- Netlify
+
+После деплоя обновить `APP_URL` в Railway переменных.
+
+### Task 10: End-to-end тестирование
+**Приоритет: средний**
+
+Проверить полную цепочку:
+1. Мастер регистрируется через платформенный бот
+2. Мастер добавляет услуги
+3. Клиент открывает Mini App → выбирает услугу → бронирует
+4. Мастер получает уведомление
+5. Клиент получает напоминание за 24ч и 2ч
+
+### Task 11: Напоминания (cron)
+**Приоритет: средний**
+
+Проверить что cron-задачи (`backend/src/jobs/reminders.js`) работают на Railway.
+Railway не усыпляет сервисы (в отличие от Render free tier) — должно работать.
+
+### Task 12: Admin-панель платформы
+**Приоритет: низкий**
+
+Активация Pro подписок через:
+`POST /platform/masters/:id/activate` с заголовком `X-Platform-Admin-Token`
+
+---
+
 ## 1. Обзор системы
 
 ```

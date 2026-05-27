@@ -49,6 +49,10 @@ if (tg) {
 const tgUser = tg?.initDataUnsafe?.user || { first_name: 'Гость' };
 const userName = tgUser.first_name || 'Гость';
 
+// Multi-tenant: читаем slug мастера из URL (?m=darya_gomel)
+const MASTER_SLUG = new URLSearchParams(location.search).get('m') || 'darya_gomel';
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE) || 'https://api.platform.com/api/v1';
+
 /* ══════════════════════════════════════════════════════════
    2. Состояние приложения
    ══════════════════════════════════════════════════════════ */
@@ -1459,18 +1463,39 @@ function confirmBooking() {
     tg.MainButton.setText('Записываем…');
   }
 
-  // Имитация сетевого запроса (в реальном приложении — fetch на бэкенд)
-  setTimeout(() => {
-    const booking = BookingStorage.add({
-      serviceId: State.selectedService,
-      date:      State.selectedDate,
-      time:      State.selectedTime,
+  fetch(`${API_BASE}/bookings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Telegram-Init-Data': tg?.initData || '',
+    },
+    body: JSON.stringify({
+      master_slug: MASTER_SLUG,
+      service_id:  State.selectedService,
+      date:        State.selectedDate,
+      time:        State.selectedTime,
+    }),
+  })
+    .then(r => r.json())
+    .then(booking => {
+      if (tg?.MainButton) tg.MainButton.hide();
+      if (booking.error) {
+        haptic('error');
+        Router.go('success', { booking: null, error: booking.error });
+        return;
+      }
+      Router.go('success', { booking });
+    })
+    .catch(() => {
+      // Fallback: localStorage при отсутствии API (режим разработки)
+      const booking = BookingStorage.add({
+        serviceId: State.selectedService,
+        date:      State.selectedDate,
+        time:      State.selectedTime,
+      });
+      if (tg?.MainButton) tg.MainButton.hide();
+      Router.go('success', { booking });
     });
-
-    if (tg?.MainButton) tg.MainButton.hide();
-
-    Router.go('success', { booking });
-  }, 700);
 }
 
 /** Отмена записи без Telegram.showConfirm (для браузера) */
@@ -1592,10 +1617,44 @@ function showOnboarding() {
   document.getElementById('onboarding-overlay').onclick = close;
 }
 
-function init() {
+function applyTheme(theme) {
+  if (!theme) return;
+  const schemes = {
+    default: { btn: '#7c3aed', bg: '#ffffff' },
+    pink:    { btn: '#ec4899', bg: '#fdf2f8' },
+    violet:  { btn: '#8b5cf6', bg: '#faf5ff' },
+    dark:    { btn: '#818cf8', bg: '#1e1b4b' },
+    minimal: { btn: '#374151', bg: '#f9fafb' },
+    luxury:  { btn: '#b45309', bg: '#fffbeb' },
+  };
+  const s = schemes[theme.color_scheme] || schemes.default;
+  const root = document.documentElement;
+  root.style.setProperty('--tg-btn', s.btn);
+  if (!theme.show_platform_branding) {
+    document.getElementById('platform-branding')?.remove();
+  }
+}
+
+async function init() {
   const now = new Date();
   State.calYear  = now.getFullYear();
   State.calMonth = now.getMonth();
+
+  // Загружаем данные мастера и тему из API (graceful fallback на data.js)
+  try {
+    const [masterData, themeData] = await Promise.all([
+      fetch(`${API_BASE}/masters/${MASTER_SLUG}`).then(r => r.json()),
+      fetch(`${API_BASE}/masters/${MASTER_SLUG}/theme`).then(r => r.json()),
+    ]);
+    if (masterData && !masterData.error) {
+      Object.assign(APP_DATA.master, masterData);
+    }
+    if (themeData && !themeData.error) {
+      applyTheme(themeData);
+    }
+  } catch (e) {
+    console.warn('API unavailable, using local data.js:', e.message);
+  }
 
   Router.go('home', {}, 'tab');
 

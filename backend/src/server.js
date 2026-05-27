@@ -30,7 +30,7 @@ require('./jobs/reminders');
 
 app.listen({ port: PORT, host: '0.0.0.0' }, async (err) => {
   if (err) { app.log.error(err); process.exit(1); }
-  await loadAllActiveBots();
+  await loadAllActiveBots().catch(e => app.log.warn('Could not load master bots on startup:', e.message));
 });
 
 module.exports = app;
